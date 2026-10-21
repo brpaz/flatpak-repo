@@ -133,6 +133,18 @@ def gh_json(*args: str):
     return json.loads(run("gh", *args))
 
 
+def has_attestation(repo: str, digest: str | None) -> bool:
+    if not digest:
+        return False
+    try:
+        run("gh", "api", f"repos/{repo}/attestations/{digest}", "--silent")
+    except subprocess.CalledProcessError as error:
+        if "HTTP 404" in error.stderr:
+            return False
+        raise
+    return True
+
+
 def plan(config: dict, previous_state_url: str | None, out: Path) -> bool:
     """Writes plan.json under `out` and returns whether the published site is stale."""
     limit = config["retention"]["releases_per_app"]
@@ -158,6 +170,9 @@ def plan(config: dict, previous_state_url: str | None, out: Path) -> bool:
             bundle = pick_asset(assets)
             if bundle is None:
                 print(f"warning: {app['repo']} {release['tagName']} has no Flatpak bundle", file=sys.stderr)
+                continue
+            if app.get("verify_attestation") and not has_attestation(app["repo"], bundle.get("digest")):
+                print(f"warning: {app['repo']} {release['tagName']} has no build attestation", file=sys.stderr)
                 continue
             entries.append({
                 "tag": release["tagName"],

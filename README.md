@@ -48,7 +48,7 @@ Anyone who already added the remote keeps the old URL; they run `flatpak remote-
 
 ## Add an app
 
-Add an `[[apps]]` entry to `config.toml` with the Flatpak app ID, display name, summary and `owner/repo`. The app's releases need a `*.flatpak` asset that does not contain `.Devel`. A `<bundle>.flatpak.sha256` asset next to it is verified when present. Set `verify_attestation = true` for apps whose releases carry a build provenance attestation.
+Add an `[[apps]]` entry to `config.toml` with the Flatpak app ID, display name, summary and `owner/repo`. The app's releases need a `*.flatpak` asset that does not contain `.Devel`. A `<bundle>.flatpak.sha256` asset next to it is verified when present. Set `verify_attestation = true` for apps whose releases carry a build provenance attestation; their releases without one are left out of the repository.
 
 An app whose repository has no releases yet is skipped with a warning.
 
