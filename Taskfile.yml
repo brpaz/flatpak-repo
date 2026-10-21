@@ -1,0 +1,21 @@
+version: "3"
+
+tasks:
+  default:
+    desc: List available tasks
+    cmd: task --list
+
+  test:
+    desc: Run the unit tests
+    cmds:
+      - python3 -I scripts/test_publish.py
+
+  plan:
+    desc: List the releases that would be published
+    cmds:
+      - python3 scripts/publish.py plan
+
+  key:
+    desc: Generate the signing key (see scripts/generate-key.sh)
+    cmds:
+      - scripts/generate-key.sh

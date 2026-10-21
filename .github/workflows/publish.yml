@@ -1,0 +1,92 @@
+name: Publish
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  repository_dispatch:
+    types: [app-released]
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Rebuild and deploy even if no release changed
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - config.toml
+      - scripts/**
+      - .github/workflows/publish.yml
+
+# One deployment at a time; a run that is already deploying is never cancelled.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build the repository
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.plan.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: List the releases to publish
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          compare=--compare-published
+          if [ "${{ inputs.force }}" = "true" ]; then compare=; fi
+          python3 scripts/publish.py plan $compare
+
+      - name: Install Flatpak tooling
+        if: steps.plan.outputs.changed == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak ostree gnupg
+
+      - name: Download the bundles
+        if: steps.plan.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/publish.py fetch
+
+      - name: Import the signing key
+        if: steps.plan.outputs.changed == 'true'
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          install -d -m 700 "$RUNNER_TEMP/gnupg"
+          printf '%s' "$GPG_PRIVATE_KEY" | gpg --homedir "$RUNNER_TEMP/gnupg" --batch --import
+
+      - name: Assemble the repository
+        if: steps.plan.outputs.changed == 'true'
+        run: python3 scripts/publish.py assemble --gpg-homedir "$RUNNER_TEMP/gnupg"
+
+      - uses: actions/configure-pages@v6.0.0
+        if: steps.plan.outputs.changed == 'true'
+
+      - uses: actions/upload-pages-artifact@v5.0.0
+        if: steps.plan.outputs.changed == 'true'
+        with:
+          path: build/site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    if: needs.build.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5.0.1

@@ -1,0 +1,34 @@
+[repo]
+name = "brunopaz"
+title = "Bruno Paz's apps"
+comment = "Flatpak apps by Bruno Paz"
+homepage = "https://github.com/brpaz"
+# Where the repository is served from. Users store this URL when they add the remote, so
+# set your own domain here (and as the custom domain in the repository's Pages settings)
+# before you share the repository.
+url = "https://brpaz.github.io/flatpak-repo"
+
+[retention]
+# Releases kept per app. Older ones leave the repository but stay on the app's GitHub
+# Releases page.
+releases_per_app = 5
+
+[[apps]]
+id = "dev.brunopaz.ResticViewer"
+name = "Restic Viewer"
+summary = "Browse and restore restic backups"
+repo = "brpaz/restic-viewer"
+verify_attestation = true
+
+[[apps]]
+id = "dev.brunopaz.Verbatim"
+name = "Verbatim"
+summary = "Transcribe and caption speech on your computer"
+repo = "brpaz/verbatim"
+
+[[apps]]
+id = "dev.brunopaz.Reefgraph"
+name = "Reefgraph"
+summary = "Draw Mermaid diagrams"
+repo = "brpaz/reefgraph"
+verify_attestation = true
